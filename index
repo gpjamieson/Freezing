@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mpemba Effect: Temperature Lab</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .lab-bench { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 1000px; display: grid; grid-template-columns: 400px 1fr; gap: 30px; }
+        .visual-col { display: flex; justify-content: space-around; border-right: 2px solid #eee; padding-right: 20px; }
+        .thermo-box { display: flex; flex-direction: column; align-items: center; width: 150px; }
+        .thermometer { width: 22px; height: 160px; background: #e0e0e0; border: 3px solid #333; border-radius: 15px; position: relative; margin-bottom: 25px; }
+        .mercury { position: absolute; bottom: 0; width: 100%; background: #d63031; border-radius: 10px; transition: height 1s ease-in-out; }
+        .bulb { position: absolute; bottom: -12px; left: -9px; width: 35px; height: 35px; background: #d63031; border: 3px solid #333; border-radius: 50%; }
+        .tray { height: 60px; width: 130px; border: 3px solid #7f8c8d; border-radius: 4px; position: relative; overflow: hidden; background: #fff; margin-top: 10px; }
+        .water { position: absolute; bottom: 0; width: 100%; transition: all 1s; }
+        .hot-fill { background: rgba(214, 48, 49, 0.4); }
+        .cold-fill { background: rgba(9, 132, 227, 0.4); }
+        .frozen { background: #ffffff !important; border-top: 2px solid #ddd; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
+        .controls { grid-column: span 2; text-align: center; padding-top: 20px; border-top: 2px solid #f1f1f1; }
+        .timer { font-size: 2.5rem; font-family: monospace; font-weight: bold; margin-bottom: 10px; color: #2d3436; }
+        button { padding: 12px 30px; font-size: 1rem; border-radius: 6px; cursor: pointer; border: none; margin: 0 10px; transition: 0.2s; }
+        .btn-step { background: #0984e3; color: white; }
+        .btn-reset { background: #636e72; color: white; }
+        button:disabled { background: #b2bec3; cursor: not-allowed; }
+        #explanation { display: none; margin-top: 20px; padding: 15px; background: #e1f5fe; border-left: 5px solid #0288d1; font-size: 0.9rem; text-align: left; }
+    </style>
+</head>
+<body>
+
+    <h2>Experiment: Comparing Freezing Rates</h2>
+    <p>Question: What will freeze faster: hot or cold water?</p>
+    
+    <div class="lab-bench">
+        <div class="visual-col">
+            <div class="thermo-box">
+                <div class="thermometer"><div id="h-merc" class="mercury"></div><div class="bulb"></div></div>
+                <div id="h-deg" style="font-weight: bold;">80°C</div>
+                <div class="tray"><div id="h-fill" class="water hot-fill" style="height: 100%;"></div></div>
+                <div id="h-label" style="font-size: 0.8rem; margin-top:5px; color:#666;">Liquid</div>
+            </div>
+            <div class="thermo-box">
+                <div class="thermometer"><div id="c-merc" class="mercury"></div><div class="bulb"></div></div>
+                <div id="c-deg" style="font-weight: bold;">20°C</div>
+                <div class="tray"><div id="c-fill" class="water cold-fill" style="height: 100%;"></div></div>
+                <div id="c-label" style="font-size: 0.8rem; margin-top:5px; color:#666;">Liquid</div>
+            </div>
+        </div>
+        <div style="height: 350px;"><canvas id="labChart"></canvas></div>
+        <div class="controls">
+            <div class="timer" id="clock">00:00</div>
+            <button class="btn-step" id="stepBtn" onclick="revealNext()">Check Trays (20 Min Interval)</button>
+            <button class="btn-reset" onclick="initLab()">Reset Experiment</button>
+            <div id="explanation">
+                <strong>Teacher's Note:</strong> This is the <strong>Mpemba Effect</strong>. Hot water can freeze faster than cold water due to rapid cooling from evaporation, stronger convection currents, and fewer dissolved gases.
+            </div>
+        </div>
+    </div>
+
+<script>
+    let currentStep = 0;
+    let dataSet = { h: [], c: [], v: [] };
+    let chart;
+
+    function precomputeData() {
+        let success = false;
+        while (!success) {
+            let h = [80], c = [20], v = [100];
+            let hFrozen = -1, cFrozen = -1;
+            for (let i = 1; i <= 5; i++) {
+                let dropH = (h[i-1] > 30) ? (22 + Math.random()*8) : (8 + Math.random()*4);
+                let nextH = Math.max(0, h[i-1] - dropH);
+                h.push(nextH);
+                if (nextH === 0 && hFrozen === -1) hFrozen = i;
+                let dropC = (3 + Math.random()*4);
+                let nextC = Math.max(0, c[i-1] - dropC);
+                c.push(nextC);
+                if (nextC === 0 && cFrozen === -1) cFrozen = i;
+                v.push(v[i-1] - (0.5 + Math.random()*1.5));
+            }
+            if (hFrozen > 0 && hFrozen <= 5 && (cFrozen === -1 || hFrozen < cFrozen)) {
+                dataSet = { h, c, v };
+                success = true;
+            }
+        }
+    }
+
+    function initLab() {
+        currentStep = 0;
+        precomputeData();
+        document.getElementById('stepBtn').disabled = false;
+        document.getElementById('clock').innerText = "00:00";
+        document.getElementById('explanation').style.display = "none";
+        document.getElementById('h-fill').className = "water hot-fill";
+        document.getElementById('c-fill').className = "water cold-fill";
+        updateDisplay();
+        setupChart();
+    }
+
+    function setupChart() {
+        const ctx = document.getElementById('labChart').getContext('2d');
+        if (chart) chart.destroy();
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [0], datasets: [
+                { label: 'Hot Tray (°C)', data: [80], borderColor: '#d63031', tension: 0.2 },
+                { label: 'Cold Tray (°C)', data: [20], borderColor: '#0984e3', tension: 0.2 }
+            ]},
+            options: { maintainAspectRatio: false, scales: { y: { min: -2, max: 90 } } }
+        });
+    }
+
+    function revealNext() {
+        currentStep++;
+        updateDisplay();
+        chart.data.labels.push(currentStep * 20);
+        chart.data.datasets[0].data.push(dataSet.h[currentStep].toFixed(1));
+        chart.data.datasets[1].data.push(dataSet.c[currentStep].toFixed(1));
+        chart.update();
+        if (currentStep >= 5) {
+            document.getElementById('stepBtn').disabled = true;
+            document.getElementById('explanation').style.display = "block";
+        }
+    }
+
+    function updateDisplay() {
+        let time = currentStep * 20;
+        document.getElementById('clock').innerText = `00:${time.toString().padStart(2, '0')}`.replace('100','01:40');
+        const hT = dataSet.h[currentStep];
+        const cT = dataSet.c[currentStep];
+        document.getElementById('h-merc').style.height = `${(hT + 10) / 100 * 100}%`;
+        document.getElementById('h-deg').innerText = `${hT.toFixed(1)}°C`;
+        document.getElementById('h-fill').style.height = `${dataSet.v[currentStep]}%`;
+        if(hT <= 0) { document.getElementById('h-fill').classList.add("frozen"); document.getElementById('h-label').innerText = "FROZEN"; }
+        document.getElementById('c-merc').style.height = `${(cT + 10) / 100 * 100}%`;
+        document.getElementById('c-deg').innerText = `${cT.toFixed(1)}°C`;
+        if(cT <= 0) { document.getElementById('c-fill').classList.add("frozen"); document.getElementById('c-label').innerText = "FROZEN"; }
+    }
+    window.onload = initLab;
+</script>
+</body>
+</html>
