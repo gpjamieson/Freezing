@@ -8,7 +8,6 @@
         body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .lab-bench { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 1050px; display: grid; grid-template-columns: 450px 1fr; gap: 30px; }
         
-        /* Visuals */
         .visual-col { display: flex; justify-content: space-around; border-right: 2px solid #eee; padding-right: 20px; }
         .thermo-box { display: flex; flex-direction: column; align-items: center; width: 180px; }
         .thermometer { width: 22px; height: 160px; background: #e0e0e0; border: 3px solid #333; border-radius: 15px; position: relative; margin-bottom: 25px; }
@@ -21,7 +20,6 @@
         .cold-fill { background: rgba(9, 132, 227, 0.4); }
         .frozen { background: #ffffff !important; border-top: 2px solid #ddd; box-shadow: inset 0 0 15px rgba(255,255,255,0.8); }
         
-        /* Effect Overlays */
         .steam { position: absolute; top: -25px; left: 40%; font-size: 24px; opacity: 0; transition: 1s; }
         .bubbles { position: absolute; bottom: 5px; width: 100%; text-align: center; opacity: 0; font-size: 12px; transition: 1s; }
         .swirls { position: absolute; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.2) 10px, rgba(255,255,255,0.2) 20px); animation: move 1.5s linear infinite; opacity: 0; transition: 0.5s; }
@@ -40,7 +38,7 @@
 </head>
 <body>
 
-    <h2 style="color: #2c3e50;">Temperature Experiment: Hot vs. Cold Water</h2>
+    <h2 style="color: #2c3e50;">Temperature Experiment: What freezes faster?</h2>
     
     <div class="lab-bench">
         <div class="visual-col">
@@ -75,11 +73,11 @@
             <button class="btn-step" id="stepBtn" onclick="revealNext()">Check Trays (Every 20 Mins)</button>
             <button class="btn-reset" onclick="initLab()">Reset Lab</button>
             <div id="explanation">
-                <strong>Analysis:</strong> The hot water froze faster! This observation is called the <strong>Mpemba Effect</strong>[cite: 25, 29]. Factors include: 
+                <strong>Scientific Analysis:</strong> This result confirms the <strong>Mpemba Effect</strong>. Even though Tray A started much hotter, it reached the freezing point first. Key factors include: 
                 <ul>
-                    <li><strong>Evaporation:</strong> Steam reduces the total amount of water to be frozen.</li>
-                    <li><strong>Convection:</strong> Stronger currents move heat to the surface faster.</li>
-                    <li><strong>Gases:</strong> Boiling water has fewer dissolved gases, which can affect freezing.</li>
+                    <li><strong>Evaporation:</strong> Steam reduces the mass of the water; less water freezes faster.</li>
+                    <li><strong>Convection:</strong> Rapid currents in hot water move heat to the surface efficiently.</li>
+                    <li><strong>Gases:</strong> Boiling removes dissolved gases, which may change how ice crystals form.</li>
                 </ul>
             </div>
         </div>
@@ -120,7 +118,6 @@
         document.getElementById('clock').innerText = "00:00";
         document.getElementById('explanation').style.display = "none";
         
-        // Reset Visuals
         document.getElementById('h-fill').className = "water hot-fill";
         document.getElementById('c-fill').className = "water cold-fill";
         document.getElementById('h-label').innerText = "Liquid";
@@ -164,26 +161,23 @@
         const hT = dataSet.h[currentStep];
         const cT = dataSet.c[currentStep];
 
-        // Update Hot Tray Visuals
         document.getElementById('h-merc').style.height = `${(hT + 10) / 100 * 100}%`;
         document.getElementById('h-deg').innerText = `${hT.toFixed(1)}°C`;
         document.getElementById('h-fill').style.height = `${dataSet.v[currentStep]}%`;
         
-        // Effects for Hot Tray
         document.getElementById('h-steam').style.opacity = (hT > 40) ? "1" : "0";
         document.getElementById('h-swirl').style.opacity = (hT > 10 && hT < 70) ? "0.6" : "0";
         
         if(hT <= 0) {
             document.getElementById('h-fill').classList.add("frozen");
             document.getElementById('h-label').innerText = "FROZEN";
-            document.getElementById('h-status').innerText = "All liquid converted to solid ice.";
+            document.getElementById('h-status').innerText = "Entirely frozen[cite: 16]. Note mass loss from steam.";
         } else if (hT < 30) {
-            document.getElementById('h-status').innerText = "Rapid cooling; convection currents slowing.";
+            document.getElementById('h-status').innerText = "Convection currents driving heat loss.";
         } else {
-            document.getElementById('h-status').innerText = "High evaporation (steam) and heat loss.";
+            document.getElementById('h-status').innerText = "Rapid evaporation (steam) occurring.";
         }
 
-        // Update Cold Tray Visuals
         document.getElementById('c-merc').style.height = `${(cT + 10) / 100 * 100}%`;
         document.getElementById('c-deg').innerText = `${cT.toFixed(1)}°C`;
         document.getElementById('c-bubbles').style.opacity = (cT > 0) ? "0.8" : "0";
@@ -191,9 +185,9 @@
         if(cT <= 0) {
             document.getElementById('c-fill').classList.add("frozen");
             document.getElementById('c-label').innerText = "FROZEN";
-            document.getElementById('c-status').innerText = "Water finally reached freezing point.";
+            document.getElementById('c-status').innerText = "Temperature reached freezing point.";
         } else {
-            document.getElementById('c-status').innerText = "Slow, steady cooling; gas bubbles visible.";
+            document.getElementById('c-status').innerText = "Steady cooling; high dissolved gas content.";
         }
     }
     window.onload = initLab;
